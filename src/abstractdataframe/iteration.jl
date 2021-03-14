@@ -13,16 +13,12 @@ with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{D<:AbstractDataFrame, S} <: AbstractVector{DataFrameRow{D, S}}
+struct DataFrameRows{D<:AbstractDataFrame} <: AbstractVector{DataFrameRow}
     df::D
 end
 
 Base.summary(dfrs::DataFrameRows) = "$(length(dfrs))-element DataFrameRows"
 Base.summary(io::IO, dfrs::DataFrameRows) = print(io, summary(dfrs))
-
-Base.iterate(::AbstractDataFrame) =
-    error("AbstractDataFrame is not iterable. Use eachrow(df) to get a row iterator " *
-          "or eachcol(df) to get a column iterator")
 
 """
     eachrow(df::AbstractDataFrame)
@@ -72,7 +68,7 @@ julia> eachrow(view(df, [4, 3], [2, 1]))
    2 │    13      3
 ```
 """
-eachrow(df::AbstractDataFrame) = DataFrameRows{typeof(df), typeof(index(df))}(df)
+eachrow(df::AbstractDataFrame) = DataFrameRows(df)
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )

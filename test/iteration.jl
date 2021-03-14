@@ -53,8 +53,6 @@ using Test, DataFrames
     @test map(minimum, eachcol(df)) == [1, 2]
     @test eltype.(eachcol(mapcols(Vector{Float64}, df))) == [Float64, Float64]
     @test eltype(map(Vector{Float64}, eachcol(df))) == Vector{Float64}
-
-    @test_throws ErrorException for x in df; end
 end
 
 @testset "mapcols" begin
@@ -198,6 +196,25 @@ end
     @test_throws ArgumentError findprev(col -> eltype(col) <: Int, cols, :x1)
     @test_throws ArgumentError findprev(col -> eltype(col) <: Int, cols, "x1")
     @test findall(col -> eltype(col) <: Int, cols) == [1, 3]
+end
+
+@testset "data frame and grouped data frame iteration" begin
+    df = DataFrame(a=1:3, b=4:6, c=7:9)
+    dfv = @view df[1:3, 1:3]
+    gdf = groupby(df, :a)
+    gdfv = groupby(dfv, :a)
+
+    for x in (df, dfv)
+        @test collect(x) == map(identity, x) == [v for v in x] == [x[i, :] for i in 1:3]
+        @test map(sum, x) == sum.(eachrow(x))
+        @test reduce((x,y) -> sum(x) + sum(y), df) == mapreduce(sum, +, x) == sum(Matrix(x))
+    end
+
+    for x in (gdf, gdfv)
+        @test collect(x) == map(identity, x) == [v for v in x] == [x[i] for i in 1:3]
+        @test reduce(vcat, x) == parent(x)
+        @test mapreduce(v -> sum(Matrix(v)), +, x) == sum(Matrix(parent(x)))
+    end
 end
 
 end # module
